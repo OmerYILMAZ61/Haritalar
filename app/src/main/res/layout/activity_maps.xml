@@ -5,27 +5,40 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
-        android:orientation="horizontal"
+    <RelativeLayout
+        android:id="@+id/rlt1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/lineer"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true">
+        android:layout_height="50dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:elevation="10dp"
+        android:background="@drawable/white_border">
+
+        <ImageView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:id="@+id/icn_ara"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="10dp"
+            android:src="@drawable/ic_ara"/>
+
 
         <AutoCompleteTextView
+            android:id="@+id/et_location"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_toRightOf="@+id/icn_ara"
             android:layout_weight="1"
-            android:id="@+id/et_location" />
+            android:layout_centerVertical="true"
+            android:textSize="15dp"
+            android:textColor="#000"
+            android:background="@null"
+            android:hint="Adres Giriniz "
+            android:imeOptions="actionSearch"/>
 
-        <Button
-            android:text="Go"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/btn_Go"
-            />
-    </LinearLayout>
+
+    </RelativeLayout>
 
     <Button
         android:text="Uydu"
@@ -41,8 +54,7 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="MapsActivity"
-        android:layout_below="@+id/lineer"/>
+        tools:context="MapsActivity" />
 
     <ZoomControls
         android:layout_alignParentEnd="true"
@@ -51,5 +63,6 @@
         android:layout_height="wrap_content"
         android:id="@+id/zoom"
         android:layout_alignParentRight="true"></ZoomControls>
+
 
 </RelativeLayout>

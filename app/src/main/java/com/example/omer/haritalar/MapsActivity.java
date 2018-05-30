@@ -3,22 +3,36 @@ package com.example.omer.haritalar;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.location.Address;
 import android.location.Geocoder;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
+import android.text.Spanned;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ZoomControls;
 
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.location.places.AutocompletePrediction;
 import com.google.android.gms.location.places.GeoDataClient;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
+import com.google.android.gms.location.places.PlaceBufferResponse;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -28,6 +42,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.RuntimeRemoteException;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,6 +80,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         etLocation = findViewById(R.id.et_location);
         mAdapter = new PlaceAutocompleteAdapter(this, mGeoDataClient, ADELAIDE, null);
         etLocation.setAdapter(mAdapter);
+        etLocation.setOnItemClickListener(mAutocompleteClickListener);
 
 
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -93,38 +111,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 } else {
                     mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
                     btn_MapType.setText("UYDU");
-                }
-            }
-        });
-
-        Button btnGo = (Button) findViewById(R.id.btn_Go);
-
-        btnGo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                String location = etLocation.getText().toString();
-                if (mMarker != null) {
-                    mMarker.remove();
-                }
-                if (location != null && !location.equals("")) {
-                    List<Address> adressList = null;
-                    Geocoder geocoder = new Geocoder(MapsActivity.this);
-                    try {
-                        adressList = geocoder.getFromLocationName(location, 1);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    Address address = adressList.get(0);
-
-                    MarkerOptions mMarkerOp = new MarkerOptions()
-                            .title(address.getCountryName())
-                            .snippet(address.getAddressLine(0))
-                            .position(new LatLng(address.getLatitude(), address.getLongitude()
-                            ));
-                    Log.d(TAG, mMarkerOp.getSnippet());
-                    mMarker = mMap.addMarker(mMarkerOp);
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(address.getLatitude(), address.getLongitude()), 9));
                 }
             }
         });
@@ -258,5 +244,85 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onMarkerClick(Marker marker) {
         return false;
     }
+
+    public void hideSoftKeyboard() {
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    }
+
+    private AdapterView.OnItemClickListener mAutocompleteClickListener
+            = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            /*
+             Retrieve the place ID of the selected item from the Adapter.
+             The adapter stores each Place suggestion in a AutocompletePrediction from which we
+             read the place ID and title.
+              */
+            hideSoftKeyboard();
+            final AutocompletePrediction item = mAdapter.getItem(position);
+            final String placeId = item.getPlaceId();
+            final CharSequence primaryText = item.getPrimaryText(null);
+
+            Log.i(TAG, "Autocomplete item selected: " + primaryText);
+
+            /*
+             Issue a request to the Places Geo Data Client to retrieve a Place object with
+             additional details about the place.
+              */
+
+            Task<PlaceBufferResponse> placeResult = mGeoDataClient.getPlaceById(placeId);
+            placeResult.addOnCompleteListener(mUpdatePlaceDetailsCallback);
+
+            Log.i(TAG, "Called getPlaceById to get Place details for " + placeId);
+        }
+    };
+
+    /**
+     * Callback for results from a Places Geo Data Client query that shows the first place result in
+     * the details view on screen.
+     */
+    private OnCompleteListener<PlaceBufferResponse> mUpdatePlaceDetailsCallback
+            = new OnCompleteListener<PlaceBufferResponse>() {
+        @Override
+        public void onComplete(Task<PlaceBufferResponse> task) {
+            try {
+                PlaceBufferResponse places = task.getResult();
+
+                // Get the Place object from the buffer.
+                final Place place = places.get(0);
+                if (mMarker != null) {
+                    mMarker.remove();
+                }
+                List<Address> adressList = null;
+                Geocoder geocoder = new Geocoder(MapsActivity.this);
+
+                try {
+                    adressList = geocoder.getFromLocationName(place.getName().toString(), 1);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Address address = adressList.get(0);
+
+                MarkerOptions mMarkerOp = new MarkerOptions()
+                        .title(address.getCountryName())
+                        .snippet(address.getAddressLine(0))
+                        .position(new LatLng(address.getLatitude(), address.getLongitude()
+                        ));
+                Log.d(TAG, mMarkerOp.getSnippet());
+                mMarker = mMap.addMarker(mMarkerOp);
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(address.getLatitude(), address.getLongitude()), 9));
+
+
+                Log.i(TAG, "Place details received: " + place.getName());
+
+                places.release();
+            } catch (RuntimeRemoteException e) {
+                // Request did not complete successfully
+                Log.e(TAG, "Place query did not complete.", e);
+                return;
+            }
+        }
+    };
+
 
 }
