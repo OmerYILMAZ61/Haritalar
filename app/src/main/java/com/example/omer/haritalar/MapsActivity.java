@@ -2,6 +2,7 @@ package com.example.omer.haritalar;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.location.Address;
@@ -19,6 +20,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -49,18 +51,15 @@ import com.google.android.gms.tasks.Task;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private final static String TAG = "Main Activity";
     private GoogleMap mMap;
     private final static int REQUEST_lOCATION = 90;
-    MarkerOptions trbzonMarker;
     Marker mMarker;
-    Marker markerTrabzon, markerAnkara, markerIzmir, markerIstanbul;
     List<Marker> markerList;
-    Marker clickedMarker;
-    String jsonVeri;
     List<MarkerBilgileri> markerBilgileriList;
     SupportMapFragment mapFragment;
     private LatLngBounds ADELAIDE = new LatLngBounds(
@@ -246,9 +245,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void hideSoftKeyboard() {
-        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
-
     private AdapterView.OnItemClickListener mAutocompleteClickListener
             = new AdapterView.OnItemClickListener() {
         @Override
@@ -262,9 +264,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             final AutocompletePrediction item = mAdapter.getItem(position);
             final String placeId = item.getPlaceId();
             final CharSequence primaryText = item.getPrimaryText(null);
-
             Log.i(TAG, "Autocomplete item selected: " + primaryText);
-
             /*
              Issue a request to the Places Geo Data Client to retrieve a Place object with
              additional details about the place.
@@ -295,6 +295,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 List<Address> adressList = null;
                 Geocoder geocoder = new Geocoder(MapsActivity.this);
+
 
                 try {
                     adressList = geocoder.getFromLocationName(place.getName().toString(), 1);
