@@ -147,7 +147,6 @@ public class PlaceAutocompleteAdapter
                     // Query the autocomplete API for the (constraint) search string.
                     filterData = getAutocomplete(constraint);
                 }
-
                 results.values = filterData;
                 if (filterData != null) {
                     results.count = filterData.size();
@@ -204,6 +203,7 @@ public class PlaceAutocompleteAdapter
         // Submit the query to the autocomplete API and retrieve a PendingResult that will
         // contain the results when the query completes.
         Task<AutocompletePredictionBufferResponse> results =
+
                 mGeoDataClient.getAutocompletePredictions(constraint.toString(), mBounds,
                         mPlaceFilter);
 

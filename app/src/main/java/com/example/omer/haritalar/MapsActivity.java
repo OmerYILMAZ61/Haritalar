@@ -30,6 +30,7 @@ import android.widget.Toast;
 import android.widget.ZoomControls;
 
 import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.AutocompletePrediction;
 import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
@@ -62,7 +63,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     List<Marker> markerList;
     List<MarkerBilgileri> markerBilgileriList;
     SupportMapFragment mapFragment;
-    private LatLngBounds ADELAIDE = new LatLngBounds(
+    private LatLngBounds TR_BOUNDS = new LatLngBounds(
             new LatLng(35.9025, 25.90902), new LatLng(42.02683, 44.5742));
     AutoCompleteTextView etLocation;
     private PlaceAutocompleteAdapter mAdapter;
@@ -77,10 +78,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mGeoDataClient = Places.getGeoDataClient(this, null);
         etLocation = findViewById(R.id.et_location);
-        mAdapter = new PlaceAutocompleteAdapter(this, mGeoDataClient, ADELAIDE, null);
+        AutocompleteFilter autocompleteFilter = new AutocompleteFilter.Builder()
+                .setTypeFilter(Place.TYPE_COUNTRY)
+                .setCountry("TR")
+                .build();
+        mAdapter = new PlaceAutocompleteAdapter(this, mGeoDataClient, TR_BOUNDS,
+                autocompleteFilter);
         etLocation.setAdapter(mAdapter);
         etLocation.setOnItemClickListener(mAutocompleteClickListener);
-
 
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -122,7 +127,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap = googleMap;
         LatLng ankara = new LatLng(39.925533, 32.866287);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ankara, 5));
-        mMap.setLatLngBoundsForCameraTarget(ADELAIDE);
+        mMap.setLatLngBoundsForCameraTarget(TR_BOUNDS);
         //izin kontrolü ve yer belirleme tuşu
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
